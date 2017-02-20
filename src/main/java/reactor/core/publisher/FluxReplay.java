@@ -32,6 +32,7 @@ import reactor.core.Fuseable;
 import reactor.core.Scannable;
 import reactor.core.scheduler.Scheduler;
 import reactor.util.concurrent.QueueSupplier;
+import reactor.util.context.Context;
 
 /**
  * @param <T>
@@ -113,7 +114,7 @@ final class FluxReplay<T> extends ConnectableFlux<T> implements Scannable, Fusea
 	}
 
 	@Override
-	public void subscribe(Subscriber<? super T> s) {
+	public void subscribe(Subscriber<? super T> s, Context ctx) {
 		ReplayInner<T> inner = new ReplayInner<>(s);
 		s.onSubscribe(inner);
 		for (; ; ) {

@@ -26,7 +26,7 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import reactor.core.Fuseable;
 import reactor.core.Scannable;
-
+import reactor.util.context.Context;
 
 /**
  * Given a Mono source, applies a function on its single item and continues
@@ -36,7 +36,7 @@ import reactor.core.Scannable;
  *
  * @see <a href="https://github.com/reactor/reactive-streams-commons">Reactive-Streams-Commons</a>
  */
-final class MonoThenMap<T, R> extends MonoSource<T, R> implements Fuseable {
+final class MonoThenMap<T, R> extends MonoOperator<T, R> implements Fuseable {
 
 	final Function<? super T, ? extends Mono<? extends R>> mapper;
 
@@ -47,7 +47,7 @@ final class MonoThenMap<T, R> extends MonoSource<T, R> implements Fuseable {
 	}
 
 	@Override
-	public void subscribe(Subscriber<? super R> s) {
+	public void subscribe(Subscriber<? super R> s, Context ctx) {
 
 		if (FluxFlatMap.trySubscribeScalarMap(source, s, mapper, true)) {
 			return;
@@ -56,7 +56,7 @@ final class MonoThenMap<T, R> extends MonoSource<T, R> implements Fuseable {
 		ThenMapMain<T, R> manager = new ThenMapMain<>(s, mapper);
 		s.onSubscribe(manager);
 
-		source.subscribe(manager);
+		source.subscribe(manager, ctx);
 	}
 
 	static final class ThenMapMain<T, R> extends Operators.MonoSubscriber<T, R> {
@@ -218,6 +218,11 @@ final class MonoThenMap<T, R> extends MonoSource<T, R> implements Fuseable {
 						return s == Operators.cancelledSubscription();
 				}
 				return null;
+			}
+
+			@Override
+			public Context currentContext() {
+				return parent.currentContext();
 			}
 
 			@Override

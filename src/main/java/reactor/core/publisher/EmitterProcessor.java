@@ -26,6 +26,7 @@ import org.reactivestreams.Subscription;
 import reactor.core.Exceptions;
 import reactor.core.Scannable;
 import reactor.util.concurrent.QueueSupplier;
+import reactor.util.context.Context;
 
 /**
  ** An implementation of a RingBuffer backed message-passing Processor implementing publish-subscribe with
@@ -177,7 +178,7 @@ public final class EmitterProcessor<T> extends FluxProcessor<T, T> {
 	}
 
 	@Override
-	public void subscribe(Subscriber<? super T> s) {
+	public void subscribe(Subscriber<? super T> s, Context ctx) {
 		if (s == null) {
 			throw Exceptions.argumentIsNullException();
 		}

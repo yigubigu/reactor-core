@@ -27,7 +27,7 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import reactor.core.Scannable;
-
+import reactor.util.context.Context;
 
 final class MonoFlatMap<T, R> extends Flux<R> {
 
@@ -42,11 +42,11 @@ final class MonoFlatMap<T, R> extends Flux<R> {
 	}
 
 	@Override
-	public void subscribe(Subscriber<? super R> s) {
+	public void subscribe(Subscriber<? super R> s, Context ctx) {
 		if (FluxFlatMap.trySubscribeScalarMap(source, s, mapper, false)) {
 			return;
 		}
-		source.subscribe(new FlatMapMain<T, R>(s, mapper));
+		source.subscribe(new FlatMapMain<T, R>(s, mapper, ctx), ctx);
 	}
 
 	static final class FlatMapMain<T, R> implements InnerOperator<T, R> {
@@ -54,6 +54,8 @@ final class MonoFlatMap<T, R> extends Flux<R> {
 		final Subscriber<? super R> actual;
 
 		final Function<? super T, ? extends Publisher<? extends R>> mapper;
+
+		final Context context;
 
 		Subscription main;
 
@@ -72,8 +74,10 @@ final class MonoFlatMap<T, R> extends Flux<R> {
 		boolean hasValue;
 
 		FlatMapMain(Subscriber<? super R> actual,
-				Function<? super T, ? extends Publisher<? extends R>> mapper) {
+				Function<? super T, ? extends Publisher<? extends R>> mapper,
+				Context ctx) {
 			this.actual = actual;
+			this.context = ctx;
 			this.mapper = mapper;
 		}
 
@@ -223,6 +227,11 @@ final class MonoFlatMap<T, R> extends Flux<R> {
 					return parent.requested;
 			}
 			return null;
+		}
+
+		@Override
+		public Context currentContext() {
+			return parent.context;
 		}
 
 		@Override

@@ -16,10 +16,12 @@
 
 package reactor.core.publisher;
 
+import java.util.function.Function;
 import java.util.function.LongConsumer;
 
 import org.reactivestreams.Subscriber;
 import reactor.core.Disposable;
+import reactor.util.context.Context;
 
 
 /**
@@ -29,6 +31,16 @@ import reactor.core.Disposable;
  * @param <T> the value type
  */
 public interface FluxSink<T> {
+
+	/**
+	 * Immediately propagate a {@link Context} to the child {@link Subscriber} given an
+	 * eventually non empty parent {@link Context}.
+	 *
+	 * @param doOnContext a {@link Function} given the parent context and producing a
+	 * new one to be pushed
+	 * @return this sink
+	 */
+	FluxSink<T> contextualize(Function<Context, Context> doOnContext);
 
 	/**
      * @see Subscriber#onComplete()
@@ -47,7 +59,7 @@ public interface FluxSink<T> {
      * @param t the value to emit, not null
      * Will return this sink from 3.1 (now void)
      */
-    void next(T t);
+    FluxSink<T> next(T t);
 
 	/**
 	 * The current outstanding request amount.
