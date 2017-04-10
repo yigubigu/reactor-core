@@ -115,7 +115,7 @@ public class EmitterProcessorTest {
 		Processor<Integer, Integer> processor = EmitterProcessor.create(1024);
 
 		EmitterProcessor<Integer> stream = EmitterProcessor.create();
-		BlockingSink<Integer> session = BlockingSink.create(stream);
+		FluxSink<Integer> session = stream.sink();
 		stream.subscribe(processor);
 
 		processor.subscribe(new Subscriber<Integer>() {
@@ -142,8 +142,7 @@ public class EmitterProcessorTest {
 		});
 
 		for (int i = 0; i < elements; i++) {
-			if (session.submit(i, 1000) == -1) {
-			}
+			session.next(i);
 		}
 		//stream.then();
 
@@ -180,14 +179,11 @@ public class EmitterProcessorTest {
 	@Test
 	public void normal() {
 		EmitterProcessor<Integer> tp = EmitterProcessor.create();
-		tp.connect();
 		StepVerifier.create(tp)
 		            .then(() -> {
 			            Assert.assertTrue("No subscribers?", tp.hasDownstreams());
 			            Assert.assertFalse("Completed?", tp.isTerminated());
 			            Assert.assertNull("Has error?", tp.getError());
-			            Assert.assertTrue("Started?", tp.isStarted());
-			            Assert.assertNotNull("No upstream?", tp.upstream());
 		            })
 		            .then(() -> {
 			            tp.onNext(1);
@@ -210,7 +206,6 @@ public class EmitterProcessorTest {
 	@Test
 	public void normalBackpressured() {
 		EmitterProcessor<Integer> tp = EmitterProcessor.create();
-		tp.connect();
 		StepVerifier.create(tp, 0L)
 		            .then(() -> {
 			            Assert.assertTrue("No subscribers?", tp.hasDownstreams());
@@ -235,7 +230,6 @@ public class EmitterProcessorTest {
 	@Test
 	public void normalAtomicRingBufferBackpressured() {
 		EmitterProcessor<Integer> tp = EmitterProcessor.create(100);
-		tp.connect();
 		StepVerifier.create(tp, 0L)
 		            .then(() -> {
 			            Assert.assertTrue("No subscribers?", tp.hasDownstreams());
@@ -266,17 +260,16 @@ public class EmitterProcessorTest {
 		assertThat(tp.getPending()).isEqualTo(0);
 		assertThat(tp.getBufferSize()).isEqualTo(QueueSupplier.SMALL_BUFFER_SIZE);
 		assertThat(tp.isCancelled()).isFalse();
-		assertThat(tp.downstreams()).isEmpty();
+		assertThat(tp.inners()).isEmpty();
 
 		Disposable d1 = tp.subscribe();
-		assertThat(tp.downstreams()).hasSize(1);
+		assertThat(tp.inners()).hasSize(1);
 
-		BlockingSink<Integer> s = tp.connectSink();
-		assertThat(tp.isStarted()).isTrue();
+		FluxSink<Integer> s = tp.sink();
 
-		s.accept(2);
-		s.accept(3);
-		s.accept(4);
+		s.next(2);
+		s.next(3);
+		s.next(4);
 		assertThat(tp.getPending()).isEqualTo(0);
 		AtomicReference<Subscription> d2 = new AtomicReference<>();
 		tp.subscribe(new Subscriber<Integer>() {
@@ -300,9 +293,9 @@ public class EmitterProcessorTest {
 
 			}
 		});
-		s.accept(5);
-		s.accept(6);
-		s.accept(7);
+		s.next(5);
+		s.next(6);
+		s.next(7);
 		assertThat(tp.scan(Scannable.Attr.BUFFERED)).isEqualTo(3);
 		assertThat(tp.isTerminated()).isFalse();
 		s.complete();
@@ -340,7 +333,6 @@ public class EmitterProcessorTest {
 	@Test
 	public void failDoubleError() {
 		EmitterProcessor<Integer> ep = EmitterProcessor.create();
-		ep.connect();
 		StepVerifier.create(ep)
 	                .then(() -> {
 		                assertThat(ep.getError()).isNull();
@@ -358,24 +350,15 @@ public class EmitterProcessorTest {
 	@Test
 	public void failCompleteThenError() {
 		EmitterProcessor<Integer> ep = EmitterProcessor.create();
-		ep.connect();
 		StepVerifier.create(ep)
 	                .then(() -> {
 						ep.onComplete();
 						ep.onComplete();//noop
 						ep.onError(new Exception("test"));
-						ep.cancel(); //noop
 	                })
 	                .expectComplete()
 	                .verifyThenAssertThat()
 	                .hasDroppedErrorWithMessage("test");
-	}
-
-	@Test
-	public void ignoreDoubleOnSubscribe() {
-		EmitterProcessor<Integer> ep = EmitterProcessor.create();
-		ep.connectSink();
-		assertThat(ep.connectSink().isCancelled()).isTrue();
 	}
 
 	@Test(expected = IllegalArgumentException.class)
