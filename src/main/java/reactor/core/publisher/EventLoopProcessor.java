@@ -219,10 +219,10 @@ abstract class EventLoopProcessor<IN> extends FluxProcessor<IN, IN>
 		return r;
 	}
 
-	final ExecutorService executor;
-	final ClassLoader     contextClassLoader;
-	final String          name;
-	final boolean         autoCancel;
+	final ExecutorService  executor;
+	final EventLoopContext contextClassLoader;
+	final String           name;
+	final boolean          autoCancel;
 
 	final RingBuffer<Slot<IN>> ringBuffer;
 	final WaitStrategy readWait = WaitStrategy.liteBlocking();
@@ -254,7 +254,7 @@ abstract class EventLoopProcessor<IN> extends FluxProcessor<IN, IN>
 
 		this.autoCancel = autoCancel;
 
-		contextClassLoader = new EventLoopContext();
+		contextClassLoader = new EventLoopContext(multiproducers);
 
 		this.name = defaultName(threadFactory, getClass());
 
@@ -407,8 +407,8 @@ abstract class EventLoopProcessor<IN> extends FluxProcessor<IN, IN>
 	}
 
 	@Override
-	final public boolean isStarted() {
-		return upstreamSubscription != null || ringBuffer.getAsLong() != -1;
+	public boolean isSerialized() {
+		return contextClassLoader.multiproducer;
 	}
 
 	@Override
@@ -610,9 +610,12 @@ abstract class EventLoopProcessor<IN> extends FluxProcessor<IN, IN>
 
 	final static class EventLoopContext extends ClassLoader {
 
-		EventLoopContext() {
+		final boolean multiproducer;
+
+		EventLoopContext(boolean multiproducer) {
 			super(Thread.currentThread()
 			            .getContextClassLoader());
+			this.multiproducer = multiproducer;
 		}
 	}
 

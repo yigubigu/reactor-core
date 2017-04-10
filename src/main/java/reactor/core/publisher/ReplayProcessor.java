@@ -342,18 +342,8 @@ public final class ReplayProcessor<T> extends FluxProcessor<T, T>
 	}
 
 	@Override
-	public int getBufferSize() {
-		return buffer.capacity();
-	}
-
-	@Override
 	public boolean isTerminated() {
 		return buffer.isDone();
-	}
-
-	@Override
-	public boolean isStarted() {
-		return subscription != null;
 	}
 
 	boolean add(ReplaySubscription<T> rs) {

@@ -85,12 +85,6 @@ final class DelegateProcessor<IN, OUT> extends FluxProcessor<IN, OUT>  {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
-	public boolean isStarted() {
-		return !(upstream instanceof FluxProcessor) || ((FluxProcessor<OUT, ?>) upstream).isStarted();
-	}
-
-	@Override
 	public boolean isTerminated() {
 		return Scannable.from(upstream)
 		                .scanOrDefault(Attr.TERMINATED, super.isTerminated());

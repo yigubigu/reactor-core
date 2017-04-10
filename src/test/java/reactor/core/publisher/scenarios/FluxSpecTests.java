@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2011-2016 Pivotal Software Inc, All Rights Reserved.
+ * Copyright (c) 2011-2017 Pivotal Software Inc, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -404,7 +404,7 @@ public class FluxSpecTests {
 //		"Accepted values are passed to a registered Consumer"
 //		given: "a composable with a registered consumer"
 		EmitterProcessor<Integer> composable =
-				EmitterProcessor.<Integer>create().connect();
+				EmitterProcessor.create();
 		AtomicReference<Integer> value = new AtomicReference<>();
 
 		composable.subscribe(value::set);
@@ -427,7 +427,7 @@ public class FluxSpecTests {
 //		"Accepted errors are passed to a registered Consumer"
 //		given: "a composable with a registered consumer of RuntimeExceptions"
 		EmitterProcessor<Integer> composable =
-				EmitterProcessor.<Integer>create().connect();
+				EmitterProcessor.create();
 		LongAdder errors = new LongAdder();
 		composable.doOnError(e -> errors.increment()).subscribe();
 
@@ -448,7 +448,7 @@ public class FluxSpecTests {
 	public void whenAcceptedEventIsIterableSplitCanIterateOverValues() {
 //		"When the accepted event is Iterable, split can iterate over values"
 //		given: "a composable with a known number of values"
-		EmitterProcessor<Iterable<String>> d = EmitterProcessor.<Iterable<String>>create().connect();
+		EmitterProcessor<Iterable<String>> d = EmitterProcessor.create();
 		Flux<String> composable = d.flatMap(Flux::fromIterable);
 
 //		when: "accept list of Strings"
@@ -464,7 +464,7 @@ public class FluxSpecTests {
 	public void fluxValuesCanBeMapped() {
 //		"A Flux"s values can be mapped"
 //		given: "a source composable with a mapping function"
-		EmitterProcessor<Integer> source = EmitterProcessor.<Integer> create().connect();
+		EmitterProcessor<Integer> source = EmitterProcessor.create();
 		Flux<Integer> mapped = source.map(it -> it * 2);
 
 //		when: "the source accepts a value"
@@ -502,13 +502,13 @@ public class FluxSpecTests {
 	public void multipleStreamValuesCanBeMerged() {
 //		"Multiple Stream"s values can be merged"
 //		given: "source composables to merge, buffer and tap"
-		EmitterProcessor<Integer> source1 = EmitterProcessor.<Integer>create().connect();
+		EmitterProcessor<Integer> source1 = EmitterProcessor.create();
 
-		EmitterProcessor<Integer> source2 = EmitterProcessor.<Integer>create().connect();
+		EmitterProcessor<Integer> source2 = EmitterProcessor.create();
 		source2.map(it -> it)
 		       .map(it -> it);
 
-		EmitterProcessor<Integer> source3 = EmitterProcessor.<Integer>create().connect();
+		EmitterProcessor<Integer> source3 = EmitterProcessor.create();
 
 		AtomicReference<List<Integer>> tap = new AtomicReference<>();
 		Flux.merge(source1, source2, source3).log().buffer(3)
@@ -556,9 +556,9 @@ public class FluxSpecTests {
 	public void combineLatestStreamData() {
 //		"Combine latest stream data"
 //		given: "source composables to combine, buffer and tap"
-		EmitterProcessor<String> w1 = EmitterProcessor.<String>create().connect();
-		EmitterProcessor<String> w2 = EmitterProcessor.<String>create().connect();
-		EmitterProcessor<String> w3 = EmitterProcessor.<String>create().connect();
+		EmitterProcessor<String> w1 = EmitterProcessor.create();
+		EmitterProcessor<String> w2 = EmitterProcessor.create();
+		EmitterProcessor<String> w3 = EmitterProcessor.create();
 
 //		when: "the sources are combined"
 		Flux<String> mergedFlux =
@@ -675,7 +675,7 @@ public class FluxSpecTests {
 	public void streamCanBeCounted() {
 //		"Stream can be counted"
 //		given: "source composables to count and tap"
-		EmitterProcessor<Integer> source = EmitterProcessor.<Integer>create().connect();
+		EmitterProcessor<Integer> source = EmitterProcessor.create();
 		MonoProcessor<Long> tap = source.count()
 		                                .subscribeWith(MonoProcessor.create());
 
@@ -740,7 +740,7 @@ public class FluxSpecTests {
 	public void fluxValuesCanBeFiltered() {
 //		"A Flux"s values can be filtered"
 //		given: "a source composable with a filter that rejects odd values"
-		EmitterProcessor<Integer> source = EmitterProcessor.<Integer> create().connect();
+		EmitterProcessor<Integer> source = EmitterProcessor.create();
 		Flux<Integer> filtered = source.filter(it -> it % 2 == 0);
 
 //		when: "the source accepts an even value"
@@ -758,8 +758,7 @@ public class FluxSpecTests {
 		assertThat(value.get()).isEqualTo(2);
 
 //		when: "simple filter"
-		EmitterProcessor<Boolean> anotherSource =
-				EmitterProcessor.<Boolean>create().connect();
+		EmitterProcessor<Boolean> anotherSource = EmitterProcessor.create();
 		AtomicBoolean tap = new AtomicBoolean();
 		anotherSource.filter(it -> it).subscribe(tap::set);
 		anotherSource.onNext(true);
@@ -768,7 +767,7 @@ public class FluxSpecTests {
 		assertThat(tap.get()).isTrue();
 
 //		when: "simple filter nominal case"
-		anotherSource = EmitterProcessor.<Boolean> create().connect();
+		anotherSource = EmitterProcessor.create();
 		anotherSource.filter(it -> it).subscribe(tap::set);
 		anotherSource.onNext(false);
 
@@ -780,7 +779,7 @@ public class FluxSpecTests {
 	public void whenMappingFunctionThrowsMappedComposableAcceptsError() {
 //		"When a mapping function throws an exception, the mapped composable accepts the error"
 //		given: "a source composable with a mapping function that throws an error"
-		EmitterProcessor<Integer> source = EmitterProcessor.<Integer>create().connect();
+		EmitterProcessor<Integer> source = EmitterProcessor.create();
 		Flux<String> mapped = source.map(it -> {
 					if (it == 1) {
 						throw new RuntimeException();
@@ -805,7 +804,7 @@ public class FluxSpecTests {
 	public void whenProcessorIsStreamed() {
 //		"When a processor is streamed"
 //		given: "a source composable and a async downstream"
-		ReplayProcessor<Integer> source = ReplayProcessor.<Integer>create().connect();
+		ReplayProcessor<Integer> source = ReplayProcessor.create();
 		Scheduler scheduler = Schedulers.newParallel("test", 2);
 
 		try {
@@ -837,7 +836,7 @@ public class FluxSpecTests {
 	public void whenFilterFunctionThrowsFilteredComposableAcceptsError() {
 //		"When a filter function throws an exception, the filtered composable accepts the error"
 //		given: "a source composable with a filter function that throws an error"
-		EmitterProcessor<Integer> source = EmitterProcessor.<Integer>create().connect();
+		EmitterProcessor<Integer> source = EmitterProcessor.create();
 		Flux<Integer> filtered = source.filter(it -> {
 			if (it == 1) {
 				throw new RuntimeException();
@@ -893,7 +892,7 @@ public class FluxSpecTests {
 	public void whenReducingKnownNumberOfValuesOnlyFinalValueIsPassedToConsumers() {
 //		"When reducing a known number of values, only the final value is passed to consumers"
 //		given: "a composable with a known number of values and a reduce function"
-		EmitterProcessor<Integer> source = EmitterProcessor.<Integer>create().connect();
+		EmitterProcessor<Integer> source = EmitterProcessor.create();
 		Mono<Integer> reduced = source.reduce(new Reduction());
 		List<Integer> values = new ArrayList<>();
 		reduced.doOnSuccess(values::add).subscribe();
@@ -914,7 +913,7 @@ public class FluxSpecTests {
 	public void knownNumberOfValuesCanBeReduced() {
 //		"A known number of values can be reduced"
 //		given: "a composable that will accept 5 values and a reduce function"
-		EmitterProcessor<Integer> source = EmitterProcessor.<Integer>create().connect();
+		EmitterProcessor<Integer> source = EmitterProcessor.create();
 		Mono<Integer> reduced = source.reduce(new Reduction());
 		MonoProcessor<Integer> value = reduced.subscribeWith(MonoProcessor.create());
 
@@ -934,7 +933,7 @@ public class FluxSpecTests {
 	public void whenKnownNumberOfValuesIsReducedOnlyFinalValueMadeAvailable() {
 //		"When a known number of values is being reduced, only the final value is made available"
 //		given: "a composable that will accept 2 values and a reduce function"
-		EmitterProcessor<Integer> source = EmitterProcessor.<Integer>create().connect();
+		EmitterProcessor<Integer> source = EmitterProcessor.create();
 		MonoProcessor<Integer> value = source.reduce(new Reduction())
 		                                     .subscribeWith(MonoProcessor.create());
 
@@ -959,7 +958,7 @@ public class FluxSpecTests {
 //		"When an unknown number of values is being scanned, each reduction is passed to a consumer"
 //		given: "a composable with a reduce function"
 		FluxProcessor<Integer, Integer> source =
-				EmitterProcessor.<Integer>create().connect();
+				EmitterProcessor.create();
 		Flux<Integer> reduced = source.scan(new Reduction());
 		AtomicReference<Integer> value = new AtomicReference<>();
 		reduced.subscribe(value::set);
@@ -989,7 +988,7 @@ public class FluxSpecTests {
 //		"Reduce will accumulate a list of accepted values"
 //		given: "a composable"
 		FluxProcessor<Integer, Integer> source =
-				EmitterProcessor.<Integer>create().connect();
+				EmitterProcessor.create();
 		Mono<List<Integer>> reduced = source.collectList();
 		MonoProcessor<List<Integer>> value = reduced.subscribe();
 
@@ -1006,7 +1005,7 @@ public class FluxSpecTests {
 //		"When an unknown number of values is being reduced, each reduction is passed to a consumer on window"
 //		given: "a composable with a reduce function"
 		FluxProcessor<Integer, Integer> source =
-				EmitterProcessor.<Integer>create().connect();
+				EmitterProcessor.create();
 		Flux<Integer> reduced = source.window(2)
 		                              .log()
 		                              .flatMap(it -> it.log("lol")
