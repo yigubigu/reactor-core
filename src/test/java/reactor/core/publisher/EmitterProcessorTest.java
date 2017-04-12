@@ -257,9 +257,6 @@ public class EmitterProcessorTest {
 	public void state(){
 		EmitterProcessor<Integer> tp = EmitterProcessor.create();
 		assertThat(tp.getPending()).isEqualTo(0);
-
-		tp.onNext(1);
-		assertThat(tp.getPending()).isEqualTo(0);
 		assertThat(tp.getBufferSize()).isEqualTo(QueueSupplier.SMALL_BUFFER_SIZE);
 		assertThat(tp.isCancelled()).isFalse();
 		assertThat(tp.inners()).isEmpty();

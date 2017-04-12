@@ -295,19 +295,6 @@ public final class EmitterProcessor<T> extends FluxProcessor<T, T>
 		}
 
 		while (!q.offer(t)) {
-			//if source non anonymous then it's an error as it must respect RS
-			// backpressure
-			if(s != Operators.emptySubscription()){
-				Throwable ex = Operators.onOperatorError(s,
-						Exceptions.failWithOverflow("Queue is full?!"),
-						t);
-				if (!Exceptions.addThrowable(ERROR, this, ex)) {
-					Operators.onErrorDropped(ex);
-					return;
-				}
-				done = true;
-				break;
-			}
 			LockSupport.parkNanos(10);
 		}
 		drain();
