@@ -54,9 +54,6 @@ public class EmitterProcessorTest {
 
 		Processor<Integer, Integer> processor = EmitterProcessor.create(16);
 
-		Flux.range(1, 10)
-		    .subscribe(processor);
-
 		List<Integer> list = new ArrayList<>();
 
 		processor.subscribe(new Subscriber<Integer>() {
@@ -90,6 +87,11 @@ public class EmitterProcessorTest {
 				latch.countDown();
 			}
 		});
+
+		Flux.range(1, 10)
+		    .subscribe(processor);
+
+
 		//stream.broadcastComplete();
 
 		latch.await(8, TimeUnit.SECONDS);
@@ -254,7 +256,7 @@ public class EmitterProcessorTest {
 	@Test
 	public void state(){
 		EmitterProcessor<Integer> tp = EmitterProcessor.create();
-		assertThat(tp.getPending()).isEqualTo(-1L);
+		assertThat(tp.getPending()).isEqualTo(0);
 
 		tp.onNext(1);
 		assertThat(tp.getPending()).isEqualTo(0);
@@ -336,10 +338,8 @@ public class EmitterProcessorTest {
 		StepVerifier.create(ep)
 	                .then(() -> {
 		                assertThat(ep.getError()).isNull();
-		                assertThat(ep.toString()).doesNotContain("error");
 						ep.onError(new Exception("test"));
 						assertThat(ep.getError()).hasMessage("test");
-		                assertThat(ep.toString()).contains("error");
 						ep.onError(new Exception("test2"));
 	                })
 	                .expectErrorMessage("test")
@@ -515,9 +515,6 @@ public class EmitterProcessorTest {
 	@Test
 	public void testHanging() {
 		FluxProcessor<String, String> processor = EmitterProcessor.create(2);
-		Flux.fromIterable(DATA)
-		    .log()
-		    .subscribe(processor);
 
 		AssertSubscriber<String> first = AssertSubscriber.create(0);
 		processor.log("after-1").subscribe(first);
@@ -525,29 +522,42 @@ public class EmitterProcessorTest {
 		AssertSubscriber<String> second = AssertSubscriber.create(0);
 		processor.log("after-2").subscribe(second);
 
+		Flux.fromIterable(DATA)
+		    .log()
+		    .subscribe(processor);
+
 		second.request(1);
-		second.awaitAndAssertNextValues("1");
+		second.assertNoValues();
 
 		first.request(3);
+
+		second.awaitAndAssertNextValues("1");
+
+		second.cancel();
 		first.awaitAndAssertNextValues("1", "2", "3");
+		first.cancel();
+
+		assertThat(processor.scanOrDefault(Scannable.Attr.CANCELLED, false)).isTrue();
 	}
 
 	@Test
 	public void testNPE() {
 		FluxProcessor<String, String> processor = EmitterProcessor.create(8);
+		AssertSubscriber<String> first = AssertSubscriber.create(1);
+		processor.log().take(1).subscribe(first);
+
+		AssertSubscriber<String> second = AssertSubscriber.create(3);
+		processor.log().subscribe(second);
+
 		Flux.fromIterable(DATA)
 		    .log()
 		    .subscribe(processor);
 
-		AssertSubscriber<String> first = AssertSubscriber.create(1);
-		processor.subscribe(first);
 
 		first.awaitAndAssertNextValues("1");
 
-		AssertSubscriber<String> second = AssertSubscriber.create(3);
-		processor.subscribe(second);
 
-		second.awaitAndAssertNextValues("2", "3", "4");
+		second.awaitAndAssertNextValues("1", "2", "3");
 	}
 
 	static class MyThread extends Thread {
