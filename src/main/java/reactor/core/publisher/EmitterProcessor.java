@@ -220,18 +220,12 @@ public final class EmitterProcessor<T> extends FluxProcessor<T, T>
 		}
 	}
 
-	@Override
-	public EmitterProcessor<T> connect() {
-		onSubscribe(Operators.emptySubscription());
-		return this;
-	}
-
 	/**
 	 * Return the number of parked elements in the emitter backlog.
 	 *
 	 * @return the number of parked elements in the emitter backlog.
 	 */
-	public long getPending() {
+	public int getPending() {
 		Queue<T> q = queue;
 		return q != null ? q.size() : 0;
 	}
@@ -379,7 +373,7 @@ public final class EmitterProcessor<T> extends FluxProcessor<T, T>
 			case PARENT:
 				return s;
 			case BUFFERED:
-				return (int) getPending();
+				return getPending();
 			case CANCELLED:
 				return isCancelled();
 		}

@@ -44,13 +44,6 @@ import reactor.util.concurrent.WaitStrategy;
 abstract class EventLoopProcessor<IN> extends FluxProcessor<IN, IN>
 		implements Runnable {
 
-	/**
-	 * Whether the RingBuffer*Processor can be graphed by wrapping the individual Sequence with the target downstream
-	 */
-	@Deprecated
-	public static final  boolean TRACEABLE_RING_BUFFER_PROCESSOR =
-			Boolean.parseBoolean(System.getProperty("reactor.ringbuffer.trace", "true"));
-
 	static <E> Flux<E> coldSource(RingBuffer<Slot<E>> ringBuffer, Throwable t, Throwable error,
 			RingBuffer.Sequence start){
 		Flux<E> bufferIterable = generate(start::getAsLong, (seq, sink) -> {

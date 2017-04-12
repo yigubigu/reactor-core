@@ -458,12 +458,6 @@ public final class ReplayProcessor<T> extends FluxProcessor<T, T>
 		}
 	}
 
-	@Override
-	public ReplayProcessor<T> connect() {
-		onSubscribe(Operators.emptySubscription());
-		return this;
-	}
-
 	static final class ReplayInner<T>
 			implements FluxReplay.ReplaySubscription<T> {
 

@@ -74,51 +74,6 @@ public abstract class FluxProcessor<IN, OUT> extends Flux<OUT>
 		return new DelegateProcessor<>(downstream, upstream);
 	}
 
-
-	/**
-	 * Trigger onSubscribe with a stateless subscription to signal this subscriber it can start receiving
-	 * onNext, onComplete and onError calls.
-	 * <p>
-	 * Doing so MAY allow direct UNBOUNDED onXXX calls and MAY prevent {@link org.reactivestreams.Publisher} to subscribe this
-	 * subscriber.
-	 *
-	 * Note that {@link org.reactivestreams.Processor} can extend this behavior to effectively start its subscribers.
-	 *
-	 * @return this
-	 * @deprecated {@link FluxProcessor#onSubscribe(Subscription)} is not required by
-	 * default anymore and brings no benefit given the private scope of the
-	 * Subscription.
-	 */
-	@Deprecated
-	public FluxProcessor<IN, OUT> connect() {
-		onSubscribe(Operators.emptySubscription());
-		return this;
-	}
-
-	/**
-	 * Create a {@link BlockingSink} and attach it via {@link #onSubscribe(Subscription)}.
-	 *
-	 * @return a new subscribed {@link BlockingSink}
-	 * @deprecated use {@link #sink()}
-	 */
-	@Deprecated
-	public final BlockingSink<IN> connectSink() {
-		return connectSink(true);
-	}
-
-	/**
-	 * Prepare a {@link BlockingSink} and pass it to {@link #onSubscribe(Subscription)} if the autostart flag is
-	 * set to true.
-	 *
-	 * @param autostart automatically start?
-	 * @return a new {@link BlockingSink}
-	 * @deprecated use {@link #sink()}
-	 */
-	@Deprecated
-	public final BlockingSink<IN> connectSink(boolean autostart) {
-		return BlockingSink.create(this, autostart);
-	}
-
 	@Override
 	public void dispose() {
 		onError(new CancellationException("Disposed"));
@@ -163,18 +118,6 @@ public abstract class FluxProcessor<IN, OUT> extends Flux<OUT>
 	@Override
 	public Stream<? extends Scannable> inners() {
 		return Stream.empty();
-	}
-
-	/**
-	 * Has this upstream started or "onSubscribed" ?
-	 *
-	 * @return has this upstream started or "onSubscribed" ?
-	 * @deprecated Processor are stateful and started by default which means you can
-	 * onNext them directly
-	 */
-	@Deprecated
-	public boolean isStarted() {
-		return true;
 	}
 
 	/**
