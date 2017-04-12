@@ -49,8 +49,7 @@ import static reactor.core.publisher.FluxPublish.PublishSubscriber.TERMINATED;
  *
  * @author Stephane Maldini
  */
-public final class EmitterProcessor<T> extends FluxProcessor<T, T>
-		implements FluxPublish.PubSubMain<T> {
+public final class EmitterProcessor<T> extends FluxProcessor<T, T> {
 
 	/**
 	 * Create a new {@link EmitterProcessor} using {@link QueueSupplier#SMALL_BUFFER_SIZE}
@@ -334,8 +333,7 @@ public final class EmitterProcessor<T> extends FluxProcessor<T, T>
 		return super.scan(key);
 	}
 
-	@Override
-	public void drain() {
+	final void drain() {
 		if (WIP.getAndIncrement(this) != 0) {
 			return;
 		}
@@ -387,7 +385,9 @@ public final class EmitterProcessor<T> extends FluxProcessor<T, T>
 					if (checkTerminated(d, v == null)) {
 						return;
 					}
-					replenish(1);
+					if (sourceMode != Fuseable.SYNC) {
+						s.request(1);
+					}
 					continue;
 				}
 
@@ -429,8 +429,8 @@ public final class EmitterProcessor<T> extends FluxProcessor<T, T>
 					e++;
 				}
 
-				if (e != 0) {
-					replenish(e);
+				if (e != 0 && sourceMode != Fuseable.SYNC) {
+					s.request(e);
 				}
 
 				if (maxRequested != 0L && !empty) {
@@ -448,12 +448,6 @@ public final class EmitterProcessor<T> extends FluxProcessor<T, T>
 	@SuppressWarnings("unchecked")
 	FluxPublish.PubSubInner<T>[] terminate() {
 		return SUBSCRIBERS.getAndSet(this, TERMINATED);
-	}
-
-	void replenish(long n) {
-		if (sourceMode != Fuseable.SYNC) {
-			s.request(n);
-		}
 	}
 
 	boolean checkTerminated(boolean d, boolean empty) {
@@ -505,8 +499,7 @@ public final class EmitterProcessor<T> extends FluxProcessor<T, T>
 		}
 	}
 
-	@Override
-	public final void remove(FluxPublish.PubSubInner<T> inner) {
+	final void remove(FluxPublish.PubSubInner<T> inner) {
 		for (; ; ) {
 			FluxPublish.PubSubInner<T>[] a = subscribers;
 			if (a == TERMINATED || a == EMPTY) {
@@ -565,8 +558,14 @@ public final class EmitterProcessor<T> extends FluxProcessor<T, T>
 		}
 
 		@Override
-		FluxPublish.PubSubMain<T> parent() {
-			return parent;
+		void drainParent() {
+			parent.drain();
+		}
+
+		@Override
+		void removeAndDrainParent() {
+			parent.remove(this);
+			parent.drain();
 		}
 	}
 
