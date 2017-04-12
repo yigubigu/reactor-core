@@ -364,7 +364,8 @@ public class EmitterProcessorTest {
 	@Test
 	public void ignoreDoubleOnSubscribe() {
 		EmitterProcessor<Integer> ep = EmitterProcessor.create();
-		ep.connectSink();
+		ep.sink();
+		assertThat(ep.sink().isCancelled()).isTrue();
 	}
 
 	@Test(expected = IllegalArgumentException.class)
