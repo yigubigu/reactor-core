@@ -370,14 +370,6 @@ public class EmitterProcessorTest {
 		EmitterProcessor.create(-1);
 	}
 
-	@Test(expected = IllegalStateException.class)
-	public void failTooMuchSubscribers() {
-		EmitterProcessor<Integer> ep = EmitterProcessor.create(32, 2);
-		ep.subscribe();
-		ep.subscribe();
-		ep.subscribe();
-	}
-
 	static final List<String> DATA     = new ArrayList<>();
 	static final int          MAX_SIZE = 100;
 

@@ -87,21 +87,7 @@ public final class EmitterProcessor<T> extends FluxProcessor<T, T>
 	 * @return a fresh processor
 	 */
 	public static <E> EmitterProcessor<E> create(int bufferSize) {
-		return create(bufferSize, Integer.MAX_VALUE);
-	}
-
-	/**
-	 * Create a new {@link EmitterProcessor} using {@link QueueSupplier#SMALL_BUFFER_SIZE}
-	 * backlog size, blockingWait Strategy and auto-cancel.
-	 *
-	 * @param <E> Type of processed signals
-	 * @param bufferSize the internal buffer size to hold signals
-	 * @param concurrency the concurrency level of the emission
-	 *
-	 * @return a fresh processor
-	 */
-	public static <E> EmitterProcessor<E> create(int bufferSize, int concurrency) {
-		return create(bufferSize, concurrency, true);
+		return create(bufferSize, true);
 	}
 
 	/**
@@ -115,27 +101,9 @@ public final class EmitterProcessor<T> extends FluxProcessor<T, T>
 	 * @return a fresh processor
 	 */
 	public static <E> EmitterProcessor<E> create(int bufferSize, boolean autoCancel) {
-		return create(bufferSize, Integer.MAX_VALUE, autoCancel);
+		return new EmitterProcessor<>(autoCancel, bufferSize);
 	}
 
-	/**
-	 * Create a new {@link EmitterProcessor} using {@link QueueSupplier#SMALL_BUFFER_SIZE}
-	 * backlog size, blockingWait Strategy and auto-cancel.
-	 *
-	 * @param <E> Type of processed signals
-	 * @param bufferSize the internal buffer size to hold signals
-	 * @param concurrency the concurrency level of the emission
-	 * @param autoCancel automatically cancel
-	 *
-	 * @return a fresh processor
-	 */
-	public static <E> EmitterProcessor<E> create(int bufferSize,
-			int concurrency,
-			boolean autoCancel) {
-		return new EmitterProcessor<>(autoCancel, concurrency, bufferSize);
-	}
-
-	final int maxConcurrency;
 	final int prefetch;
 
 	final boolean autoCancel;
@@ -176,12 +144,11 @@ public final class EmitterProcessor<T> extends FluxProcessor<T, T>
 					Throwable.class,
 					"error");
 
-	EmitterProcessor(boolean autoCancel, int maxConcurrency, int prefetch) {
+	EmitterProcessor(boolean autoCancel, int prefetch) {
 		if (prefetch < 1) {
 			throw new IllegalArgumentException("bufferSize must be strictly positive, " + "was: " + prefetch);
 		}
 		this.autoCancel = autoCancel;
-		this.maxConcurrency = maxConcurrency;
 		this.prefetch = prefetch;
 		SUBSCRIBERS.lazySet(this, EMPTY);
 	}
@@ -529,9 +496,6 @@ public final class EmitterProcessor<T> extends FluxProcessor<T, T>
 				return false;
 			}
 			int n = a.length;
-			if (n + 1 > maxConcurrency) {
-				throw new IllegalStateException("Cannot subscribe more than " + "" + maxConcurrency + " subscribers.");
-			}
 			FluxPublish.PubSubInner<?>[] b = new FluxPublish.PubSubInner[n + 1];
 			System.arraycopy(a, 0, b, 0, n);
 			b[n] = inner;
